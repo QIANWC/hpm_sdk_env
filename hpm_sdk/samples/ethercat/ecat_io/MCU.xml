@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<EmbeddedProfile xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ToolchainID>6621e4a3-fa79-4878-ab08-47a39d2d7f83</ToolchainID>
+  <ToolchainVersion>
+    <GCC>13.2.0</GCC>
+    <GDB>13.2</GDB>
+    <Revision>0</Revision>
+  </ToolchainVersion>
+  <BspID>com.visualgdb.bsp.in-place</BspID>
+  <BspVersion>1.0</BspVersion>
+  <MCUProperties>
+    <Entries />
+  </MCUProperties>
+  <BSPSourceFolderName>Device-specific files</BSPSourceFolderName>
+  <InPlaceMCU>
+    <CompilationFlags>
+      <EnableLinkerGroups>true</EnableLinkerGroups>
+    </CompilationFlags>
+    <FLASHSize>0</FLASHSize>
+    <RAMSize>0</RAMSize>
+    <FLASHBase>4294967295</FLASHBase>
+    <RAMBase>4294967295</RAMBase>
+    <AdditionalSourcesRequiredForTesting>false</AdditionalSourcesRequiredForTesting>
+  </InPlaceMCU>
+  <MCUMakFile>mcu.mak</MCUMakFile>
+  <ReferencedFrameworks />
+  <FrameworkProperties>
+    <Entries />
+  </FrameworkProperties>
+  <TestFrameworkProperties>
+    <Entries />
+  </TestFrameworkProperties>
+</EmbeddedProfile>
