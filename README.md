@@ -62,4 +62,7 @@ The menu bar supports setting both English and Chinese languages and provides ac
   The warning occurs because the path to the current build project's output directory is too long. This may result in some generated obj files having paths that exceed the maximum length supported by the compiler, potentially causing compilation failures. You can address this issue by making the following adjustments:
   - To minimize the absolute path length for hpm_sdk, place the SDK_ENV directory as close to the root of the drive as possible, such as "D:\sdk_env". This reduces the number of directory levels in the absolute path for sdk_env, thereby shortening the entire path length for hpm_sdk.
   - Alternatively, you can shorten the final output directory path length. For example, in start_gui, reduce the "Build Path" to minimize the number of directory levels in the absolute path. Ensuring a shorter path length can help guarantee that the project builds successfully.
-  
+### During compilation, the SAMPLE prompt "fatal error: xxxx: No such file or directory"
+  - When a compilation error indicates that a file or directory cannot be found, first check whether the file path is correct and whether the file exists.
+  - Next, verify that the file path is correctly specified in CMakeLists.txt, as an incorrect path may cause the file to be missing.
+  - Then, ensure that the file path length complies with the Windows file path length limit. The file may fail to be read if the directory path exceeds Windows' path length limitation. If the file path that caused the compilation failure is too long, try shortening the directory hierarchy of SDK_ENV to keep the path as concise as possible. After that, recheck whether the compilation can proceed successfully.
