@@ -1,5 +1,19 @@
 # Change Log 
 
+## [1.11.0] - 2025-12-31:
+- docs: README: add compile error faq.
+- docs: ad notice about openocd updates.'
+- docs: update user guide for hpm6360evk and hpm5301evklite.
+- openocd: fix buffer size calculation for snprintf null terminator
+- start_gui: add openocd path hint if hpm_sdk_base changed.
+- start_gui: fix bug
+- start_gui: update programing flash command and bugfix in start_gui.
+- update FTDI_InstallDriver.exe to improve stability
+
+### Notice:
+  - openocd: due updating to recent code base of riscv-openocd (https://github.com/riscv-collab/riscv-openocd),
+  it only works with the openocd cfg files included in hpm_sdk v1.11.0. 
+
 ## [1.10.0] - 2025-06-30:
 - start_gui: add quick start menu
 - start_gui: change the gcc compile button text to compile.
