@@ -57,4 +57,4 @@ sdk_src(application/digital_io.c)
 
 sdk_inc(.)
 sdk_app_src(ecat.c)
-generate_ide_projects()
+#generate_ide_projects()

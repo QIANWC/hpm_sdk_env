@@ -59,7 +59,7 @@
     <ExportCompileCommands>true</ExportCompileCommands>
     <DisableToolchainFile>false</DisableToolchainFile>
     <ExtraConfigurationVariables>
-      <string>BOARD=HPM6E00EVK</string>
+      <string>BOARD=HPM5E00EVK</string>
     </ExtraConfigurationVariables>
     <DeployAsRoot>false</DeployAsRoot>
     <CMakeCleanMode>RemoveBuildDirectory</CMakeCleanMode>
@@ -165,7 +165,7 @@
       <InterfaceID>com.sysprogs.debug.jlink.jlinksw</InterfaceID>
       <InterfaceSerialNumber>000174504268</InterfaceSerialNumber>
       <Configuration xsi:type="com.visualgdb.edp.segger.settings">
-        <CommandLine>-select USB -device HPM6E8YxVMx -speed auto -if JTAG</CommandLine>
+        <CommandLine>-select USB -device HPM5E31xVKx -speed auto -if JTAG</CommandLine>
         <ProgramMode>Enabled</ProgramMode>
         <StartupCommands>
           <string>target remote :$$SYS:GDB_PORT$$</string>
