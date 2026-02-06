@@ -14,7 +14,7 @@
 #include "digital_io.h"
 #include "hpm_ecat_hw.h"
 #include "hpm_l1c_drv.h"
-
+#include "monitor.h"
 
 int main(void)
 {
@@ -24,6 +24,8 @@ int main(void)
     board_init_switch_led();      /* init switch and led for ECAT display */
     printf("EtherCAT IO sample\n");
 
+    monitor_init();
+    
     /* hardware init */
     stat = ecat_hardware_init(HPM_ESC);
     if (stat != status_success) {
@@ -48,6 +50,7 @@ int main(void)
     /* Execute the stack */
     while (bRunApplication == TRUE) {
         MainLoop();
+        monitor_handle();
     }
 
     /* hardware deinit */
