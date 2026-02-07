@@ -17,6 +17,7 @@
 #include "monitor.h"
 #include "hpm_spi_drv.h"
 //#include "hpm_can_drv.h"
+#include "application/ads1220.h"
 
 /*
  * Copyright (c) 2021 HPMicro
@@ -56,7 +57,7 @@
 #define PLACE_BUFF_AT_CACHEABLE 1
 #endif
 
-#define TEST_TRANSFER_DATA_IN_BYTE (128U)
+#define TEST_TRANSFER_DATA_IN_BYTE (5U)
 #if PLACE_BUFF_AT_CACHEABLE
 ATTR_ALIGN(HPM_L1C_CACHELINE_SIZE) uint8_t sent_buff[TEST_TRANSFER_DATA_IN_BYTE];
 ATTR_ALIGN(HPM_L1C_CACHELINE_SIZE) uint8_t receive_buff[TEST_TRANSFER_DATA_IN_BYTE];
@@ -67,9 +68,10 @@ ATTR_PLACE_AT_NONCACHEABLE uint8_t receive_buff[TEST_TRANSFER_DATA_IN_BYTE];
 
 void prepare_transfer_data(void)
 {
-    for (uint32_t i = 0; i < TEST_TRANSFER_DATA_IN_BYTE; i++) {
-        sent_buff[i] = i % 0xFF;
-    }
+    sent_buff[0] = 0x23;
+//    for (uint32_t i = 0; i < TEST_TRANSFER_DATA_IN_BYTE; i++) {
+//        sent_buff[i] = i % 0xFF;
+//    }
 }
 
 void spi_master_check_transfer_data(SPI_Type *ptr)
@@ -142,6 +144,7 @@ hpm_stat_t spi_rx_trigger_dma(DMA_Type *dma_ptr, uint8_t ch_num, SPI_Type *spi_p
     return dma_setup_handshake(dma_ptr, &config, true);
 }
 
+ATTR_PLACE_AT_NONCACHEABLE int toggle;
 int user_spi_init(void)
 {
     spi_timing_config_t timing_config = { 0 };
@@ -153,7 +156,7 @@ int user_spi_init(void)
     uint32_t addr = 0x10;
     uint32_t spi_tx_trans_count, spi_rx_trans_count;
 
-    board_init();
+//    board_init();
     spi_clcok = board_init_spi_clock(TEST_SPI);
     board_init_spi_pins(TEST_SPI);
     printf("SPI Master DMA Transfer Example\n");
@@ -182,12 +185,12 @@ int user_spi_init(void)
 
     /* set SPI control config for master */
     spi_master_get_default_control_config(&control_config);
-    control_config.master_config.cmd_enable = true;
-    control_config.master_config.addr_enable = true;
+    control_config.master_config.cmd_enable = false;
+    control_config.master_config.addr_enable = false;
     control_config.master_config.addr_phase_fmt = spi_address_phase_format_single_io_mode;
     control_config.common_config.tx_dma_enable = true;
     control_config.common_config.rx_dma_enable = true;
-    control_config.common_config.trans_mode = spi_trans_write_dummy_read;
+    control_config.common_config.trans_mode = spi_trans_write_read_together;
     control_config.common_config.data_phase_fmt = spi_single_io_mode;
     control_config.common_config.dummy_cnt = spi_dummy_count_1;
 
@@ -195,6 +198,19 @@ int user_spi_init(void)
     spi_rx_trans_count = sizeof(receive_buff) / TEST_SPI_DATA_LEN_IN_BYTE;
     prepare_transfer_data();
 
+    if (toggle) {
+        sent_buff[0] = 0x23;//rreg
+        sent_buff[1] = 0;
+        sent_buff[2] = 0;
+        toggle = 0;
+    } else {
+        sent_buff[0] = 0x43;//wreg
+        sent_buff[1] = 0x2;
+        sent_buff[2] = 0x2;
+        toggle = 1;
+    }
+    
+#if 1
     /* setup spi tx trigger dma transfer*/
 #if PLACE_BUFF_AT_CACHEABLE
     if (l1c_dc_is_enabled()) {
@@ -230,9 +246,11 @@ int user_spi_init(void)
         uint32_t aligned_end = HPM_L1C_CACHELINE_ALIGN_UP((uint32_t)receive_buff + sizeof(receive_buff));
         uint32_t aligned_size = aligned_end - aligned_start;
         l1c_dc_invalidate(aligned_start, aligned_size);
+//    l1c_dc_invalidate_all();
     }
 #endif
     stat = spi_setup_dma_transfer(TEST_SPI, &control_config, &cmd, &addr, spi_tx_trans_count, spi_rx_trans_count);
+//    toggle = !toggle;
     if (stat != status_success) {
         printf("spi setup dma transfer failed\n");
         while (1) {
@@ -241,12 +259,14 @@ int user_spi_init(void)
 
     spi_master_check_transfer_data(TEST_SPI);
 
-    while (1) {
-    }
+//    while (1) {
+//    }
+#endif
     
     return 0;
 }
 
+uint8_t ads1220_regs[4];
 
 int main(void)
 {
@@ -254,7 +274,7 @@ int main(void)
     board_init();
     board_init_ethercat(HPM_ESC); /* init ESC function pins */
     board_init_switch_led();      /* init switch and led for ECAT display */
-    board_init_spi_pins(HPM_SPI1);
+//    board_init_spi_pins(HPM_SPI1);
 //    board_init_spi_pins_with_gpio_as_cs(HPM_SPI1);
     printf("EtherCAT IO sample\n");
 
@@ -283,12 +303,15 @@ int main(void)
     bRunApplication = TRUE;
     /* Execute the stack */
 
-    user_spi_init();
     
     while (bRunApplication == TRUE) {
         MainLoop();
         monitor_handle();
-//        user_spi_call();
+
+    user_spi_init();
+    board_delay_ms(20);
+    //        ads1220_read_registers(BOARD_APP_SPI_BASE, 0, 4, ads1220_regs);
+    //        user_spi_call();
     }
 
     /* hardware deinit */
