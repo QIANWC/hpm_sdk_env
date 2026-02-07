@@ -37,7 +37,13 @@
 #include "hpm_dmamux_drv.h"
 #include "hpm_l1c_drv.h"
 
-ATTR_PLACE_AT_NONCACHEABLE ADS1220_t RSensor;
+ATTR_PLACE_AT_NONCACHEABLE_INIT ADS1220_t RSensor = {
+    .tc_coef = 0.000039f, //39uV/degC
+    .voltage_vref = 3.3f, //AVCC
+    .temperature_cold = 25.0f,
+    .temperature_real = 25.0f,
+};
+
 uint8_t ads1220_regs[4];
 
 int main(void)

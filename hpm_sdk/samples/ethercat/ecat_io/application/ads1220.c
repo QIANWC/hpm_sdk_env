@@ -236,6 +236,12 @@ hpm_stat_t ads1220_read_data(ADS1220_t *dev)
     //    dev->wbuf[0] = ADS1220_CMD_RDATA;
     //    memset(dev->wbuf + 1, 0, 3);
     ads1220_session(dev, 4, 4);
-    dev->adc_result = dev->rbuf[0] << 24 | dev->rbuf[1] << 16 | dev->rbuf[2] << 8;
+    uint32_t result = dev->rbuf[0] << 24 | dev->rbuf[1] << 16 | dev->rbuf[2] << 8;
+    dev->adc_result = result >> 8;
+    dev->voltage_raw = dev->adc_result * dev->voltage_vref / (1 << 23); // Assuming Vref = 3.3V and 24-bit diff ADC
+    float cold_voltage = dev->temperature_cold * dev->tc_coef;
+    float voltage = dev->voltage_raw - cold_voltage;                   // Remove the voltage at cold temperature
+    dev->temperature_real = voltage / dev->tc_coef;
+    
     return 0;
 }

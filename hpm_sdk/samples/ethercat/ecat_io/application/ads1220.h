@@ -16,10 +16,15 @@ typedef struct {
     spi_timing_config_t timing_config;
     spi_format_config_t format_config;
     spi_control_config_t control_config;
-    uint32_t adc_result;
+    int32_t adc_result;
     uint8_t regs[ADS1220_MAX_REGS];
     uint8_t wbuf[1 + ADS1220_MAX_REGS];
     uint8_t rbuf[1 + ADS1220_MAX_REGS];
+    float tc_coef;//   = 0.039f;              //39mV/degC
+    float voltage_vref;
+    float voltage_raw;
+    float temperature_cold;//    = 25.0f;
+    float temperature_real;
 } ADS1220_t;
 
 hpm_stat_t ads1220_init(ADS1220_t *dev);
