@@ -37,7 +37,7 @@
 #include "hpm_dmamux_drv.h"
 #include "hpm_l1c_drv.h"
 
-ADS1220_t ads1220_dev;
+ATTR_PLACE_AT_NONCACHEABLE ADS1220_t ads1220_dev;
 uint8_t ads1220_regs[4];
 
 int main(void)
@@ -76,15 +76,15 @@ int main(void)
     /* Execute the stack */
 
     ads1220_init(&ads1220_dev);
+    ads1220_dev.reg_wbuf[1] = 0x02; // CONFIG0: PGA, GAIN=2
+    ads1220_write_registers(&ads1220_dev);
     
     while (bRunApplication == TRUE) {
         MainLoop();
         monitor_handle();
 
-    ads1220_test(&ads1220_dev);
-    board_delay_ms(20);
-    //        ads1220_read_registers(BOARD_APP_SPI_BASE, 0, 4, ads1220_regs);
-    //        user_spi_call();
+        board_delay_ms(20);
+        ads1220_read_registers(&ads1220_dev);
     }
 
     /* hardware deinit */

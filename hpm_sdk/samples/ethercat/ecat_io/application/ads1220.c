@@ -23,7 +23,7 @@
 #define TEST_SPI_DMA_TRANS_DATA_WIDTH DMA_TRANSFER_WIDTH_BYTE
 
 #ifndef PLACE_BUFF_AT_CACHEABLE
-#define PLACE_BUFF_AT_CACHEABLE 1
+#define PLACE_BUFF_AT_CACHEABLE 0
 #endif
 
 #define TEST_TRANSFER_DATA_IN_BYTE (5U)
@@ -34,14 +34,6 @@ ATTR_ALIGN(HPM_L1C_CACHELINE_SIZE) uint8_t receive_buff[TEST_TRANSFER_DATA_IN_BY
 ATTR_PLACE_AT_NONCACHEABLE uint8_t sent_buff[TEST_TRANSFER_DATA_IN_BYTE];
 ATTR_PLACE_AT_NONCACHEABLE uint8_t receive_buff[TEST_TRANSFER_DATA_IN_BYTE];
 #endif
-
-void prepare_transfer_data(void)
-{
-    sent_buff[0] = 0x23;
-    //    for (uint32_t i = 0; i < TEST_TRANSFER_DATA_IN_BYTE; i++) {
-    //        sent_buff[i] = i % 0xFF;
-    //    }
-}
 
 void spi_master_check_transfer_data(SPI_Type *ptr)
 {
@@ -120,7 +112,7 @@ hpm_stat_t ads1220_init(ADS1220_t *dev)
         return status_invalid_argument;
     }
 
-    hpm_stat_t stat;
+    __unused hpm_stat_t stat;
     uint32_t spi_clcok;
 
     spi_clcok = board_init_spi_clock(TEST_SPI);
@@ -164,7 +156,7 @@ hpm_stat_t ads1220_init(ADS1220_t *dev)
 }
 
 ATTR_PLACE_AT_NONCACHEABLE int toggle;
-hpm_stat_t ads1220_test(ADS1220_t *dev)
+hpm_stat_t ads1220_session(ADS1220_t *dev)
 {
     hpm_stat_t stat;
     uint8_t cmd = 0x1a;
@@ -173,19 +165,6 @@ hpm_stat_t ads1220_test(ADS1220_t *dev)
 
     spi_tx_trans_count = sizeof(sent_buff) / TEST_SPI_DATA_LEN_IN_BYTE;
     spi_rx_trans_count = sizeof(receive_buff) / TEST_SPI_DATA_LEN_IN_BYTE;
-    prepare_transfer_data();
-
-    if (toggle) {
-        sent_buff[0] = 0x23; //rreg
-        sent_buff[1] = 0;
-        sent_buff[2] = 0;
-        toggle = 0;
-    } else {
-        sent_buff[0] = 0x43; //wreg
-        sent_buff[1] = 0x2;
-        sent_buff[2] = 0x2;
-        toggle = 1;
-    }
 
 #if 1
     /* setup spi tx trigger dma transfer*/
@@ -235,85 +214,25 @@ hpm_stat_t ads1220_test(ADS1220_t *dev)
         }
     
         spi_master_check_transfer_data(TEST_SPI);
-
-//    ads1220_write_registers(TEST_SPI, 0, 4, sent_buff);
-//    ads1220_read_registers(TEST_SPI, 0, 4, receive_buff);
-//    while (1) {
-//    }
 #endif
 
     return 0;
 }
-/* Build a register read command and perform SPI transfer using spi_write_read_data.
- * ADS1220 protocol: RREG (0x20 | addr), count = n-1
- */
-hpm_stat_t ads1220_read_registers(SPI_Type *ptr, uint8_t reg_addr, uint8_t num_regs, uint8_t *out)
+hpm_stat_t ads1220_read_registers(ADS1220_t *dev)
 {
-    if (out == NULL || num_regs == 0 || num_regs > ADS1220_MAX_REGS) {
-        return status_invalid_argument;
-    }
-
-    if (reg_addr >= ADS1220_MAX_REGS) {
-        return status_invalid_argument;
-    }
-
-    uint8_t cmd;
-    cmd = ADS1220_CMD_RREG | ((reg_addr & 0x03) << 2) | ((num_regs - 1) & 0x03);
-
-    /* For ADS1220 we need to send the command and then read num_regs bytes.
-     * Use spi_write_read_data which takes write buffer, write count, read buffer, read count.
-     * We'll send the 2-byte command (wbuff) and then read num_regs bytes (rbuff).
-     * The function expects data_len_in_bytes; ADS1220 is 8-bit registers so data_len_in_bytes = 1.
-     */
-
-    uint8_t wtmp[1 + ADS1220_MAX_REGS];
-    uint8_t rtmp[1 + ADS1220_MAX_REGS];
-
-    /* copy command to wtmp */
-    wtmp[0] = cmd;
-
-    hpm_stat_t stat = spi_write_read_data(ptr, 1, wtmp, 1 + num_regs, rtmp, 1 + num_regs);
-    if (stat != status_success) {
-        return stat;
-    }
-
-    /* copy received data to out */
-    for (uint8_t i = 0; i < num_regs; i++) {
-        out[i] = rtmp[i];
-    }
-
-    return status_success;
+    //write to
+    sent_buff[0] = ADS1220_CMD_RREG | 0x3;
+    memset(sent_buff + 1, 0, ADS1220_MAX_REGS);
+    ads1220_session(dev);
+    return 0;
 }
-
-hpm_stat_t ads1220_write_registers(SPI_Type *ptr, uint8_t reg_addr, uint8_t num_regs, const uint8_t *in)
+hpm_stat_t ads1220_write_registers(ADS1220_t *dev)
 {
-    if (in == NULL || num_regs == 0 || num_regs > ADS1220_MAX_REGS) {
-        return status_invalid_argument;
+    dev->reg_wbuf[0] = ADS1220_CMD_WREG | 0x3;
+    memcpy(sent_buff, dev->reg_wbuf, sizeof(dev->reg_wbuf));
+    ads1220_session(dev);
+    for (int k = 0; k < ADS1220_MAX_REGS; ++k) {
+        dev->regs[k] = receive_buff[1 + k];
     }
-
-    if (reg_addr >= ADS1220_MAX_REGS) {
-        return status_invalid_argument;
-    }
-
-    uint8_t cmd;
-    cmd = ADS1220_CMD_WREG | ((reg_addr & 0x03) << 2) | ((num_regs - 1) & 0x03);
-
-    /* Build write buffer: cmd[0], cmd[1], reg bytes... */
-    uint8_t wbuf[1 + ADS1220_MAX_REGS];
-    wbuf[0] = cmd;
-    for (uint8_t i = 0; i < num_regs; i++)
-        wbuf[1 + i] = in[i];
-
-    /* write only transaction */
-    return spi_write_read_data(ptr, 1, wbuf, 1 + num_regs, NULL, 0);
-}
-
-hpm_stat_t ads1220_read_register(SPI_Type *ptr, uint8_t reg_addr, uint8_t *out)
-{
-    return ads1220_read_registers(ptr, reg_addr, 1, out);
-}
-
-hpm_stat_t ads1220_write_register(SPI_Type *ptr, uint8_t reg_addr, uint8_t value)
-{
-    return ads1220_write_registers(ptr, reg_addr, 1, &value);
+    return 0;
 }
