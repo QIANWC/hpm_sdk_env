@@ -31,45 +31,43 @@
 ATTR_ALIGN(HPM_L1C_CACHELINE_SIZE) uint8_t sent_buff[TEST_TRANSFER_DATA_IN_BYTE];
 ATTR_ALIGN(HPM_L1C_CACHELINE_SIZE) uint8_t receive_buff[TEST_TRANSFER_DATA_IN_BYTE];
 #else
-ATTR_PLACE_AT_NONCACHEABLE uint8_t sent_buff[TEST_TRANSFER_DATA_IN_BYTE];
-ATTR_PLACE_AT_NONCACHEABLE uint8_t receive_buff[TEST_TRANSFER_DATA_IN_BYTE];
 #endif
 
-void spi_master_check_transfer_data(SPI_Type *ptr)
+void spi_master_check_transfer_data(ADS1220_t *dev)
 {
     uint32_t i = 0U, error_count = 0U;
 
     /* Wait for the spi master transfer to complete */
-    while (spi_is_active(ptr)) {
+    while (spi_is_active(dev->spi)) {
     }
     /* disable spi dma before starting next dma transaction */
-    spi_disable_tx_dma(ptr);
-    spi_disable_rx_dma(ptr);
+    spi_disable_tx_dma(dev->spi);
+    spi_disable_rx_dma(dev->spi);
 
-    printf("The sent data are:");
-    for (i = 0; i < TEST_TRANSFER_DATA_IN_BYTE; i++) {
-        if ((i & 0x0FU) == 0U) {
-            printf("\r\n");
-        }
-        printf("0x%02X ", sent_buff[i]);
-    }
-    printf("\n");
-    printf("The received data are:");
-    for (i = 0; i < TEST_TRANSFER_DATA_IN_BYTE; i++) {
-        if ((i & 0x0FU) == 0U) {
-            printf("\n");
-        }
-        printf("0x%02X ", receive_buff[i]);
-        if (sent_buff[i] != receive_buff[i]) {
-            error_count++;
-        }
-    }
-    printf("\n");
-    if (error_count == 0) {
-        printf("SPI transfer all data matched!\n");
-    } else {
-        printf("Error occurred in SPI transfer!\n");
-    }
+//    printf("The sent data are:");
+//    for (i = 0; i < TEST_TRANSFER_DATA_IN_BYTE; i++) {
+//        if ((i & 0x0FU) == 0U) {
+//            printf("\r\n");
+//        }
+//        printf("0x%02X ", dev->reg_wbuf[i]);
+//    }
+//    printf("\n");
+//    printf("The received data are:");
+//    for (i = 0; i < TEST_TRANSFER_DATA_IN_BYTE; i++) {
+//        if ((i & 0x0FU) == 0U) {
+//            printf("\n");
+//        }
+//        printf("0x%02X ", dev->regs[i]);
+//        if (dev->reg_wbuf[i] != dev->regs[i]) {
+//            error_count++;
+//        }
+//    }
+//    printf("\n");
+//    if (error_count == 0) {
+//        printf("SPI transfer all data matched!\n");
+//    } else {
+//        printf("Error occurred in SPI transfer!\n");
+//    }
 }
 
 hpm_stat_t spi_tx_trigger_dma(DMA_Type *dma_ptr, uint8_t ch_num, SPI_Type *spi_ptr, uint32_t src, uint8_t data_width, uint32_t size)
@@ -155,7 +153,6 @@ hpm_stat_t ads1220_init(ADS1220_t *dev)
     return status_success;
 }
 
-ATTR_PLACE_AT_NONCACHEABLE int toggle;
 hpm_stat_t ads1220_session(ADS1220_t *dev)
 {
     hpm_stat_t stat;
@@ -163,23 +160,23 @@ hpm_stat_t ads1220_session(ADS1220_t *dev)
     uint32_t addr = 0x10;
     uint32_t spi_tx_trans_count, spi_rx_trans_count;
 
-    spi_tx_trans_count = sizeof(sent_buff) / TEST_SPI_DATA_LEN_IN_BYTE;
-    spi_rx_trans_count = sizeof(receive_buff) / TEST_SPI_DATA_LEN_IN_BYTE;
+    spi_tx_trans_count = sizeof(dev->wbuf);
+    spi_rx_trans_count = sizeof(dev->wbuf);
 
 #if 1
     /* setup spi tx trigger dma transfer*/
 #if PLACE_BUFF_AT_CACHEABLE
     if (l1c_dc_is_enabled()) {
         /* cache writeback for sent buff */
-        uint32_t aligned_start = HPM_L1C_CACHELINE_ALIGN_DOWN((uint32_t)sent_buff);
-        uint32_t aligned_end = HPM_L1C_CACHELINE_ALIGN_UP((uint32_t)sent_buff + sizeof(sent_buff));
+        uint32_t aligned_start = HPM_L1C_CACHELINE_ALIGN_DOWN((uint32_t)dev->wbuf);
+        uint32_t aligned_end = HPM_L1C_CACHELINE_ALIGN_UP((uint32_t)dev->wbuf + sizeof(dev->wbuf));
         uint32_t aligned_size = aligned_end - aligned_start;
         l1c_dc_writeback(aligned_start, aligned_size);
     }
 #endif
     dmamux_config(TEST_SPI_DMAMUX, TEST_SPI_TX_DMAMUX_CH, TEST_SPI_TX_DMA_REQ, true);
-    stat = spi_tx_trigger_dma(TEST_SPI_DMA, TEST_SPI_TX_DMA_CH, TEST_SPI, core_local_mem_to_sys_address(BOARD_RUNNING_CORE, (uint32_t)sent_buff),
-                              TEST_SPI_DMA_TRANS_DATA_WIDTH, sizeof(sent_buff));
+    stat = spi_tx_trigger_dma(TEST_SPI_DMA, TEST_SPI_TX_DMA_CH, TEST_SPI, core_local_mem_to_sys_address(BOARD_RUNNING_CORE, (uint32_t)dev->wbuf),
+                              TEST_SPI_DMA_TRANS_DATA_WIDTH, sizeof(dev->wbuf));
     if (stat != status_success) {
         printf("spi tx trigger dma failed\n");
         while (1) {
@@ -188,8 +185,8 @@ hpm_stat_t ads1220_session(ADS1220_t *dev)
 
     /* setup spi rx trigger dma transfer*/
     dmamux_config(TEST_SPI_DMAMUX, TEST_SPI_RX_DMAMUX_CH, TEST_SPI_RX_DMA_REQ, true);
-    stat = spi_rx_trigger_dma(TEST_SPI_DMA, TEST_SPI_RX_DMA_CH, TEST_SPI, core_local_mem_to_sys_address(BOARD_RUNNING_CORE, (uint32_t)receive_buff),
-                              TEST_SPI_DMA_TRANS_DATA_WIDTH, sizeof(receive_buff));
+    stat = spi_rx_trigger_dma(TEST_SPI_DMA, TEST_SPI_RX_DMA_CH, TEST_SPI, core_local_mem_to_sys_address(BOARD_RUNNING_CORE, (uint32_t)dev->rbuf),
+                              TEST_SPI_DMA_TRANS_DATA_WIDTH, sizeof(dev->rbuf));
     if (stat != status_success) {
         printf("spi rx trigger dma failed\n");
         while (1) {
@@ -213,7 +210,7 @@ hpm_stat_t ads1220_session(ADS1220_t *dev)
             }
         }
     
-        spi_master_check_transfer_data(TEST_SPI);
+        spi_master_check_transfer_data(dev);
 #endif
 
     return 0;
@@ -221,18 +218,17 @@ hpm_stat_t ads1220_session(ADS1220_t *dev)
 hpm_stat_t ads1220_read_registers(ADS1220_t *dev)
 {
     //write to
-    sent_buff[0] = ADS1220_CMD_RREG | 0x3;
-    memset(sent_buff + 1, 0, ADS1220_MAX_REGS);
+    dev->wbuf[0] = ADS1220_CMD_RREG | 0x3;
+    memset(dev->wbuf + 1, 0, ADS1220_MAX_REGS);
     ads1220_session(dev);
     return 0;
 }
 hpm_stat_t ads1220_write_registers(ADS1220_t *dev)
 {
-    dev->reg_wbuf[0] = ADS1220_CMD_WREG | 0x3;
-    memcpy(sent_buff, dev->reg_wbuf, sizeof(dev->reg_wbuf));
+    dev->wbuf[0] = ADS1220_CMD_WREG | 0x3;
     ads1220_session(dev);
     for (int k = 0; k < ADS1220_MAX_REGS; ++k) {
-        dev->regs[k] = receive_buff[1 + k];
+        dev->regs[k] = dev->rbuf[1 + k];
     }
     return 0;
 }

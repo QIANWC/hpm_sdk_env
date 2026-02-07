@@ -76,7 +76,7 @@ int main(void)
     /* Execute the stack */
 
     ads1220_init(&ads1220_dev);
-    ads1220_dev.reg_wbuf[1] = 0x02; // CONFIG0: PGA, GAIN=2
+    ads1220_dev.wbuf[1] = 0x02; // CONFIG0: PGA, GAIN=2
     ads1220_write_registers(&ads1220_dev);
     
     while (bRunApplication == TRUE) {

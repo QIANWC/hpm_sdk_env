@@ -17,7 +17,8 @@ typedef struct {
     spi_format_config_t format_config;
     spi_control_config_t control_config;
     uint8_t regs[ADS1220_MAX_REGS];
-    uint8_t reg_wbuf[1+ADS1220_MAX_REGS];
+    uint8_t wbuf[1 + ADS1220_MAX_REGS];
+    uint8_t rbuf[1 + ADS1220_MAX_REGS];
 } ADS1220_t;
 
 hpm_stat_t ads1220_init(ADS1220_t *dev);
