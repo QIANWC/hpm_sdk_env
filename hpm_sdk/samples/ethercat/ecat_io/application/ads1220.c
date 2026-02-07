@@ -153,15 +153,13 @@ hpm_stat_t ads1220_init(ADS1220_t *dev)
     return status_success;
 }
 
-hpm_stat_t ads1220_session(ADS1220_t *dev)
+hpm_stat_t ads1220_session(ADS1220_t *dev, uint32_t wcnt, uint32_t rcnt)
 {
     hpm_stat_t stat;
-    uint8_t cmd = 0x1a;
-    uint32_t addr = 0x10;
     uint32_t spi_tx_trans_count, spi_rx_trans_count;
 
-    spi_tx_trans_count = sizeof(dev->wbuf);
-    spi_rx_trans_count = sizeof(dev->wbuf);
+    spi_tx_trans_count = MIN(sizeof(dev->wbuf), wcnt);
+    spi_rx_trans_count = MIN(sizeof(dev->rbuf), rcnt);
 
 #if 1
     /* setup spi tx trigger dma transfer*/
@@ -176,7 +174,7 @@ hpm_stat_t ads1220_session(ADS1220_t *dev)
 #endif
     dmamux_config(TEST_SPI_DMAMUX, TEST_SPI_TX_DMAMUX_CH, TEST_SPI_TX_DMA_REQ, true);
     stat = spi_tx_trigger_dma(TEST_SPI_DMA, TEST_SPI_TX_DMA_CH, TEST_SPI, core_local_mem_to_sys_address(BOARD_RUNNING_CORE, (uint32_t)dev->wbuf),
-                              TEST_SPI_DMA_TRANS_DATA_WIDTH, sizeof(dev->wbuf));
+                              TEST_SPI_DMA_TRANS_DATA_WIDTH, spi_tx_trans_count);
     if (stat != status_success) {
         printf("spi tx trigger dma failed\n");
         while (1) {
@@ -186,7 +184,7 @@ hpm_stat_t ads1220_session(ADS1220_t *dev)
     /* setup spi rx trigger dma transfer*/
     dmamux_config(TEST_SPI_DMAMUX, TEST_SPI_RX_DMAMUX_CH, TEST_SPI_RX_DMA_REQ, true);
     stat = spi_rx_trigger_dma(TEST_SPI_DMA, TEST_SPI_RX_DMA_CH, TEST_SPI, core_local_mem_to_sys_address(BOARD_RUNNING_CORE, (uint32_t)dev->rbuf),
-                              TEST_SPI_DMA_TRANS_DATA_WIDTH, sizeof(dev->rbuf));
+                              TEST_SPI_DMA_TRANS_DATA_WIDTH, spi_rx_trans_count);
     if (stat != status_success) {
         printf("spi rx trigger dma failed\n");
         while (1) {
@@ -202,7 +200,7 @@ hpm_stat_t ads1220_session(ADS1220_t *dev)
         //    l1c_dc_invalidate_all();
     }
 #endif
-        stat = spi_setup_dma_transfer(TEST_SPI, &dev->control_config, &cmd, &addr, spi_tx_trans_count, spi_rx_trans_count);
+        stat = spi_setup_dma_transfer(TEST_SPI, &dev->control_config, NULL, NULL, spi_tx_trans_count, spi_rx_trans_count);
     //    toggle = !toggle;
         if (stat != status_success) {
             printf("spi setup dma transfer failed\n");
@@ -220,15 +218,24 @@ hpm_stat_t ads1220_read_registers(ADS1220_t *dev)
     //write to
     dev->wbuf[0] = ADS1220_CMD_RREG | 0x3;
     memset(dev->wbuf + 1, 0, ADS1220_MAX_REGS);
-    ads1220_session(dev);
+    ads1220_session(dev, 1 + ADS1220_MAX_REGS, 1 + ADS1220_MAX_REGS);
+    for (int k = 0; k < ADS1220_MAX_REGS; ++k) {
+        dev->regs[k] = dev->rbuf[1 + k];
+    }
     return 0;
 }
 hpm_stat_t ads1220_write_registers(ADS1220_t *dev)
 {
     dev->wbuf[0] = ADS1220_CMD_WREG | 0x3;
-    ads1220_session(dev);
-    for (int k = 0; k < ADS1220_MAX_REGS; ++k) {
-        dev->regs[k] = dev->rbuf[1 + k];
-    }
+    ads1220_session(dev, 1 + ADS1220_MAX_REGS, 1 + ADS1220_MAX_REGS);
+    return 0;
+}
+hpm_stat_t ads1220_read_data(ADS1220_t *dev)
+{
+    memset(dev->wbuf, 0, 4);
+    //    dev->wbuf[0] = ADS1220_CMD_RDATA;
+    //    memset(dev->wbuf + 1, 0, 3);
+    ads1220_session(dev, 4, 4);
+    dev->adc_result = dev->rbuf[0] << 24 | dev->rbuf[1] << 16 | dev->rbuf[2] << 8;
     return 0;
 }

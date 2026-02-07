@@ -37,7 +37,7 @@
 #include "hpm_dmamux_drv.h"
 #include "hpm_l1c_drv.h"
 
-ATTR_PLACE_AT_NONCACHEABLE ADS1220_t ads1220_dev;
+ATTR_PLACE_AT_NONCACHEABLE ADS1220_t RSensor;
 uint8_t ads1220_regs[4];
 
 int main(void)
@@ -75,16 +75,20 @@ int main(void)
     bRunApplication = TRUE;
     /* Execute the stack */
 
-    ads1220_init(&ads1220_dev);
-    ads1220_dev.wbuf[1] = 0x02; // CONFIG0: PGA, GAIN=2
-    ads1220_write_registers(&ads1220_dev);
-    
+    ads1220_init(&RSensor);
+    RSensor.wbuf[1] = 0x30; // 0x30=AIN1-AIN2, 0xE0=AVDD/2-AVDD/2
+    RSensor.wbuf[2] = 0x04; //CM=1,TS=0
+    RSensor.wbuf[3] = 0xD0; //VREF=AVCC, 50/60Hz rejection
+    RSensor.wbuf[4] = 0x00;
+    ads1220_write_registers(&RSensor);
+    ads1220_read_registers(&RSensor);
+
     while (bRunApplication == TRUE) {
         MainLoop();
         monitor_handle();
 
-        board_delay_ms(20);
-        ads1220_read_registers(&ads1220_dev);
+        ads1220_read_data(&RSensor);
+        board_delay_ms(100);
     }
 
     /* hardware deinit */
