@@ -1,0 +1,35 @@
+#ifndef ADS1220_H
+#define ADS1220_H
+
+#include "hpm_common.h"
+#include "hpm_spi_drv.h"
+
+/* ADS1220 command definitions */
+#define ADS1220_CMD_RREG  (0x20)
+#define ADS1220_CMD_WREG  (0x40)
+#define ADS1220_MAX_REGS  4
+
+typedef struct {
+    SPI_Type *spi;
+    spi_timing_config_t timing_config;
+    spi_format_config_t format_config;
+    spi_control_config_t control_config;
+} ADS1220_t;
+
+hpm_stat_t ads1220_init(ADS1220_t *dev);
+hpm_stat_t ads1220_test(ADS1220_t *dev);
+
+/* Read/Write multiple registers from/to ADS1220 over SPI.
+ * - ptr: pointer to SPI register block (already configured)
+ * - reg_addr: starting register address (0..3)
+ * - num_regs: number of registers to access (1..4)
+ * - out/in: data buffer
+ */
+hpm_stat_t ads1220_read_registers(SPI_Type *ptr, uint8_t reg_addr, uint8_t num_regs, uint8_t *out);
+hpm_stat_t ads1220_write_registers(SPI_Type *ptr, uint8_t reg_addr, uint8_t num_regs, const uint8_t *in);
+
+/* Convenience single-register helpers */
+hpm_stat_t ads1220_read_register(SPI_Type *ptr, uint8_t reg_addr, uint8_t *out);
+hpm_stat_t ads1220_write_register(SPI_Type *ptr, uint8_t reg_addr, uint8_t value);
+
+#endif /* ADS1220_H */
