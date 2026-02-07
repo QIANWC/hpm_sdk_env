@@ -232,6 +232,19 @@ hpm_stat_t ads1220_write_registers(ADS1220_t *dev)
 }
 hpm_stat_t ads1220_read_data(ADS1220_t *dev)
 {
+    float k_coef[] = {
+        0.0000000,
+        508355E-2,
+        7.860106E-8,
+        -2.503131E-10,
+        8.315270E-14,
+        -1.228034E-17,
+        9.804036E-22,
+        -4.413030E-26,
+        1.057734E-30,
+        -1.052755E-35,
+    };
+
     memset(dev->wbuf, 0, 4);
     //    dev->wbuf[0] = ADS1220_CMD_RDATA;
     //    memset(dev->wbuf + 1, 0, 3);
@@ -242,6 +255,15 @@ hpm_stat_t ads1220_read_data(ADS1220_t *dev)
     float cold_voltage = dev->temperature_cold * dev->tc_coef;
     float voltage = dev->voltage_raw - cold_voltage;                   // Remove the voltage at cold temperature
     dev->temperature_real = voltage / dev->tc_coef;
-    
+
+    float E = voltage * 1e6;
+    //its-90 temperature calculation, refer to https://www.its-90.com/its90_1.htm
+    float T = 0;
+    for (int k = 1; k < sizeof(k_coef) / sizeof(k_coef[0]); ++k) {
+        T += k_coef[k] * E;
+        E *= E;
+    }
+    dev->temperature_real = T;
+
     return 0;
 }
