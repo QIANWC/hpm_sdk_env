@@ -35,7 +35,7 @@ ATTR_ALIGN(HPM_L1C_CACHELINE_SIZE) uint8_t receive_buff[TEST_TRANSFER_DATA_IN_BY
 
 void spi_master_check_transfer_data(ADS1220_t *dev)
 {
-    uint32_t i = 0U, error_count = 0U;
+//    uint32_t i = 0U, error_count = 0U;
 
     /* Wait for the spi master transfer to complete */
     while (spi_is_active(dev->spi)) {
@@ -102,6 +102,58 @@ hpm_stat_t spi_rx_trigger_dma(DMA_Type *dma_ptr, uint8_t ch_num, SPI_Type *spi_p
 
     return dma_setup_handshake(dma_ptr, &config, true);
 }
+
+//查表计算方法
+typedef struct {
+    float value;
+    float raw;
+} LookupTableEntry;
+
+float lut_convert_raw_to_value(const LookupTableEntry *lut, size_t lut_size, float raw_input)
+{
+    if (raw_input <= lut[0].raw) {
+        return lut[0].value;
+    }
+    if (raw_input >= lut[lut_size - 1].raw) {
+        return lut[lut_size - 1].value;
+    }
+    int lo = 0, hi = (int)lut_size - 1;
+    while (hi - lo > 1) {
+        int mid = (lo + hi) >> 1;
+        if (lut[mid].raw <= raw_input)
+            lo = mid;
+        else
+            hi = mid;
+    }
+    float ratio = (raw_input - lut[lo].raw) / (lut[hi].raw - lut[lo].raw);
+    return lut[lo].value + ratio * (lut[hi].value - lut[lo].value);
+}
+float lut_convert_value_to_raw(const LookupTableEntry *lut, size_t lut_size, float value_input)
+{
+    if (value_input <= lut[0].value) {
+        return lut[0].raw;
+    }
+    if (value_input >= lut[lut_size - 1].value) {
+        return lut[lut_size - 1].raw;
+    }
+    int lo = 0, hi = (int)lut_size - 1;
+    while (hi - lo > 1) {
+        int mid = (lo + hi) >> 1;
+        if (lut[mid].value <= value_input)
+            lo = mid;
+        else
+            hi = mid;
+    }
+    float ratio = (value_input - lut[lo].value) / (lut[hi].value - lut[lo].value);
+    return lut[lo].raw + ratio * (lut[hi].raw - lut[lo].raw);
+}
+
+// 简单线性插值，用于查找的输入值必须为升序排列
+LookupTableEntry lut[] = {
+    { -270, -6.458 }, { -200, -5.891 }, { -100, -3.554 }, { 0, 0 },         { 100, 4.096 },   { 200, 8.138 },
+    { 300, 12.209 },  { 400, 16.397 },  { 500, 20.644 },  { 600, 24.905 },  { 700, 29.129 },  { 800, 33.275 },
+    { 900, 37.326 },  { 1000, 41.276 }, { 1100, 45.119 }, { 1200, 48.838 }, { 1300, 52.410 }, { 1372, 54.886 },
+};
 
 hpm_stat_t ads1220_init(ADS1220_t *dev)
 {
@@ -239,9 +291,9 @@ hpm_stat_t ads1220_read_data(ADS1220_t *dev)
     uint32_t result = dev->rbuf[0] << 24 | dev->rbuf[1] << 16 | dev->rbuf[2] << 8;
     dev->adc_result = result >> 8;
     dev->voltage_raw = dev->adc_result * dev->voltage_vref / (1 << 23); // Assuming Vref = 3.3V and 24-bit diff ADC
-    float cold_voltage = dev->temperature_cold * dev->tc_coef;
+    float cold_voltage = lut_convert_value_to_raw(lut, sizeof(lut)/sizeof(lut[0]), dev->temperature_cold);
     float voltage = dev->voltage_raw - cold_voltage;                   // Remove the voltage at cold temperature
-    dev->temperature_real = voltage / dev->tc_coef;
+    dev->temperature_real = lut_convert_raw_to_value(lut, sizeof(lut) / sizeof(lut[0]), voltage);
 
     return 0;
 }
