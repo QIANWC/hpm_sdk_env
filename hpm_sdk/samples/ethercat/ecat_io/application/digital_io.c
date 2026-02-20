@@ -250,6 +250,8 @@ UINT16 APPL_GenerateMapping(UINT16 *pInputSize, UINT16 *pOutputSize)
     return result;
 }
 
+#include <math.h>
+#define InputMappingPush(dst, src, size) MEMCPY(dst, src, size); dst += size/2;
 /**
 \param      pData  pointer to input process data
 
@@ -258,7 +260,10 @@ UINT16 APPL_GenerateMapping(UINT16 *pInputSize, UINT16 *pOutputSize)
 */
 void APPL_InputMapping(UINT16 *pData)
 {
-    MEMCPY(pData, &InputCounter0x6000, SIZEOF(InputCounter0x6000));
+    InputMappingPush(pData, &InputBits0x6120, SIZEOF(InputBits0x6120));
+    InputMappingPush(pData, &Voltage0x6403, SIZEOF(Voltage0x6403));
+    InputMappingPush(pData, &Current0x6413, SIZEOF(Current0x6413));
+    InputMappingPush(pData, &Temperature0x6423, SIZEOF(Temperature0x6423));
 }
 
 /**
@@ -278,7 +283,12 @@ void APPL_OutputMapping(UINT16 *pData)
 */
 void APPL_Application(void)
 {
-    InputCounter0x6000 = APPL_GetDipSw();
+    InputBits0x6120 = APPL_GetDipSw();
+    static float t = 0;
+    t += 0.002f;
+    Voltage0x6403 = 10000*sinf(t);
+    Current0x6413 = 10000*cosf(t);
+    Temperature0x6423 = 10000 * (sinf(t) + cosf(t));
     APPL_SetLed((UINT32)OutputCounter0x7010);
 }
 

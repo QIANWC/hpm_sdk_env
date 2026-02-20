@@ -32,6 +32,7 @@ sdk_src(../port/hpm_ecat_e2p_emulation.c)
 endif()
 
 sdk_src(application/digital_io.c)
+sdk_link_libraries(m)
 
 sdk_inc(.)
 sdk_app_src(ecat.c)

@@ -77,6 +77,10 @@
 								<BitSize>1</BitSize>
 							</DataType>
 							<DataType>
+								<Name>REAL</Name>
+								<BitSize>32</BitSize>
+							</DataType>
+							<DataType>
 								<Name>DT1018</Name>
 								<BitSize>144</BitSize>
 								<SubItem>
@@ -191,7 +195,7 @@
 							</DataType>
 							<DataType>
 								<Name>DT1A00</Name>
-								<BitSize>48</BitSize>
+								<BitSize>144</BitSize>
 								<SubItem>
 									<SubIdx>0</SubIdx>
 									<Name>SubIndex 000</Name>
@@ -206,9 +210,42 @@
 									<SubIdx>1</SubIdx>
 									<Name>SubIndex 001</Name>
 									<Type>UDINT</Type>
-									<Comment>Reference to 0x6000.0</Comment>
+									<Comment>Reference to 0x6120.0</Comment>
 									<BitSize>32</BitSize>
 									<BitOffs>16</BitOffs>
+									<Flags>
+										<Access>ro</Access>
+									</Flags>
+								</SubItem>
+								<SubItem>
+									<SubIdx>2</SubIdx>
+									<Name>SubIndex 002</Name>
+									<Type>UDINT</Type>
+									<Comment>Reference to 0x6403.0</Comment>
+									<BitSize>32</BitSize>
+									<BitOffs>48</BitOffs>
+									<Flags>
+										<Access>ro</Access>
+									</Flags>
+								</SubItem>
+								<SubItem>
+									<SubIdx>3</SubIdx>
+									<Name>SubIndex 003</Name>
+									<Type>UDINT</Type>
+									<Comment>Reference to 0x6413.0</Comment>
+									<BitSize>32</BitSize>
+									<BitOffs>80</BitOffs>
+									<Flags>
+										<Access>ro</Access>
+									</Flags>
+								</SubItem>
+								<SubItem>
+									<SubIdx>4</SubIdx>
+									<Name>SubIndex 004</Name>
+									<Type>UDINT</Type>
+									<Comment>Reference to 0x6423.0</Comment>
+									<BitSize>32</BitSize>
+									<BitOffs>112</BitOffs>
 									<Flags>
 										<Access>ro</Access>
 									</Flags>
@@ -770,20 +807,38 @@
 							</Object>
 							<Object>
 								<Index>#x1A00</Index>
-								<Name>InputCounter process data mapping</Name>
+								<Name>Input mapping 0</Name>
 								<Type>DT1A00</Type>
-								<BitSize>48</BitSize>
+								<BitSize>144</BitSize>
 								<Info>
 									<SubItem>
 										<Name>SubIndex 000</Name>
 										<Info>
-											<DefaultData>01</DefaultData>
+											<DefaultData>04</DefaultData>
 										</Info>
 									</SubItem>
 									<SubItem>
 										<Name>SubIndex 001</Name>
 										<Info>
-											<DefaultData>20000060</DefaultData>
+											<DefaultData>20002061</DefaultData>
+										</Info>
+									</SubItem>
+									<SubItem>
+										<Name>SubIndex 002</Name>
+										<Info>
+											<DefaultData>20000364</DefaultData>
+										</Info>
+									</SubItem>
+									<SubItem>
+										<Name>SubIndex 003</Name>
+										<Info>
+											<DefaultData>20001364</DefaultData>
+										</Info>
+									</SubItem>
+									<SubItem>
+										<Name>SubIndex 004</Name>
+										<Info>
+											<DefaultData>20002364</DefaultData>
 										</Info>
 									</SubItem>
 								</Info>
@@ -931,9 +986,48 @@
 								</Info>
 							</Object>
 							<Object>
-								<Index>#x6000</Index>
-								<Name>InputCounter</Name>
+								<Index>#x6120</Index>
+								<Name>InputBits</Name>
 								<Type>UDINT</Type>
+								<BitSize>32</BitSize>
+								<Info>
+									<DefaultData>00000000</DefaultData>
+								</Info>
+								<Flags>
+									<Access>ro</Access>
+									<PdoMapping>t</PdoMapping>
+								</Flags>
+							</Object>
+							<Object>
+								<Index>#x6403</Index>
+								<Name>Voltage</Name>
+								<Type>REAL</Type>
+								<BitSize>32</BitSize>
+								<Info>
+									<DefaultData>00000000</DefaultData>
+								</Info>
+								<Flags>
+									<Access>ro</Access>
+									<PdoMapping>t</PdoMapping>
+								</Flags>
+							</Object>
+							<Object>
+								<Index>#x6413</Index>
+								<Name>Current</Name>
+								<Type>REAL</Type>
+								<BitSize>32</BitSize>
+								<Info>
+									<DefaultData>00000000</DefaultData>
+								</Info>
+								<Flags>
+									<Access>ro</Access>
+									<PdoMapping>t</PdoMapping>
+								</Flags>
+							</Object>
+							<Object>
+								<Index>#x6423</Index>
+								<Name>Temperature</Name>
+								<Type>REAL</Type>
 								<BitSize>32</BitSize>
 								<Info>
 									<DefaultData>00000000</DefaultData>
@@ -985,7 +1079,7 @@
 				<Sm MinSize="#x24" MaxSize="#x80" DefaultSize="#x80" StartAddress="#x1000" ControlByte="#x26" Enable="1">MBoxOut</Sm>
 				<Sm MinSize="#x24" MaxSize="#x80" DefaultSize="#x80" StartAddress="#x1080" ControlByte="#x22" Enable="1">MBoxIn</Sm>
 				<Sm DefaultSize="4" StartAddress="#x1100" ControlByte="#x64" Enable="1">Outputs</Sm>
-				<Sm DefaultSize="4" StartAddress="#x1400" ControlByte="#x20" Enable="1">Inputs</Sm>
+				<Sm DefaultSize="16" StartAddress="#x1400" ControlByte="#x20" Enable="1">Inputs</Sm>
 				<RxPdo Fixed="true" Mandatory="true" Sm="2">
 					<Index>#x1600</Index>
 					<Name>OutputCounter process data mapping</Name>
@@ -999,13 +1093,34 @@
 				</RxPdo>
 				<TxPdo Fixed="true" Mandatory="true" Sm="3">
 					<Index>#x1A00</Index>
-					<Name>InputCounter process data mapping</Name>
+					<Name>Input mapping 0</Name>
 					<Entry>
-						<Index>#x6000</Index>
+						<Index>#x6120</Index>
 						<SubIndex>0</SubIndex>
 						<BitLen>32</BitLen>
-						<Name>InputCounter</Name>
+						<Name>InputBits</Name>
 						<DataType>UDINT</DataType>
+					</Entry>
+					<Entry>
+						<Index>#x6403</Index>
+						<SubIndex>0</SubIndex>
+						<BitLen>32</BitLen>
+						<Name>Voltage</Name>
+						<DataType>REAL</DataType>
+					</Entry>
+					<Entry>
+						<Index>#x6413</Index>
+						<SubIndex>0</SubIndex>
+						<BitLen>32</BitLen>
+						<Name>Current</Name>
+						<DataType>REAL</DataType>
+					</Entry>
+					<Entry>
+						<Index>#x6423</Index>
+						<SubIndex>0</SubIndex>
+						<BitLen>32</BitLen>
+						<Name>Temperature</Name>
+						<DataType>REAL</DataType>
 					</Entry>
 				</TxPdo>
 				<Mailbox DataLinkLayer="true">
