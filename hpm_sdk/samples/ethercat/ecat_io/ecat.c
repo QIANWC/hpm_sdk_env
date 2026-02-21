@@ -92,12 +92,12 @@ int main(void)
 
     ads1220_init(&RSensor);
 #ifdef SENSOR_TYPE_TC
-    RSensor.wbuf[1] = 0x30; // 0x30=AIN1-AIN2, 0xE0=AVDD/2-AVDD/2, PGA Enable
+    RSensor.wbuf[1] = 0x39; // 0x30=AIN1-AIN2, 0xE0=AVDD/2-AVDD/2, PGA=32x
     RSensor.wbuf[2] = 0x04; //CM=1,TS=0
     RSensor.wbuf[3] = 0xD0; //VREF=AVCC, 50/60Hz rejection
     RSensor.wbuf[4] = 0x00; //LxDAC Disable
 #elif defined SENSOR_TYPE_PT //PT100/PT1000
-    RSensor.wbuf[1] = 0x30; // 0x30=AIN1-AIN2, 0xE0=AVDD/2-AVDD/2, PGA Enable
+    RSensor.wbuf[1] = 0x38; // 0x30=AIN1-AIN2, 0xE0=AVDD/2-AVDD/2, PGA=16x(PT100), PGA=2x(PT1000)
     RSensor.wbuf[2] = 0x04; //CM=1,TS=0
     RSensor.wbuf[3] = 0xD5; //VREF=AVCC, 50/60Hz rejection, IDAC=500uA
     RSensor.wbuf[4] = 0x30; //L1DAC=0b001, L2DAC=0b100
