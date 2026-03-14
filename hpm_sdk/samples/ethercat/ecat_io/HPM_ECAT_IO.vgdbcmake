@@ -17,7 +17,7 @@
   <Build xsi:type="com.visualgdb.build.cmake">
     <BuildLogMode xsi:nil="true" />
     <ToolchainID>
-      <ID>796d0a35-c879-424a-87ff-eec6593108fb</ID>
+      <ID>6621e4a3-fa79-4878-ab08-47a39d2d7f83</ID>
       <Version>
         <GCC>13.2.0</GCC>
         <GDB>13.2</GDB>
@@ -59,7 +59,7 @@
     <ExportCompileCommands>true</ExportCompileCommands>
     <DisableToolchainFile>false</DisableToolchainFile>
     <ExtraConfigurationVariables>
-      <string>BOARD=HPM6E00EVK</string>
+      <string>BOARD=HPM5E00EVK</string>
     </ExtraConfigurationVariables>
     <DeployAsRoot>false</DeployAsRoot>
     <CMakeCleanMode>RemoveBuildDirectory</CMakeCleanMode>
@@ -165,7 +165,7 @@
       <InterfaceID>com.sysprogs.debug.jlink.jlinksw</InterfaceID>
       <InterfaceSerialNumber>000174504268</InterfaceSerialNumber>
       <Configuration xsi:type="com.visualgdb.edp.segger.settings">
-        <CommandLine>-select USB -device HPM6E80xVMx -speed auto -if JTAG</CommandLine>
+        <CommandLine>-select USB -device HPM5E31xVKx -speed auto -if JTAG</CommandLine>
         <ProgramMode>Enabled</ProgramMode>
         <StartupCommands>
           <string>target remote :$$SYS:GDB_PORT$$</string>
